@@ -64,11 +64,10 @@ export function TemperatureUnitProvider({ children }: { children: ReactNode }) {
     formatTemp
   };
 
-  // Use createElement instead of JSX to avoid TS issues with .tsx vs .ts
-  return React.createElement(
-    TemperatureContext.Provider,
-    { value: contextValue },
-    children
+  return (
+    <TemperatureContext.Provider value={contextValue}>
+      {children}
+    </TemperatureContext.Provider>
   );
 }
 

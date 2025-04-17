@@ -1,28 +1,34 @@
 import { useTemperatureUnit } from "@/lib/temperatureUnit";
-import { Button } from "@/components/ui/button";
-import { Thermometer, ThermometerSnowflake } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Thermometer } from "lucide-react";
 
 export default function TemperatureUnitToggle() {
   const { unit, toggleUnit } = useTemperatureUnit();
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={toggleUnit}
-      className="flex items-center gap-1 border-slate-300 text-slate-700 hover:bg-slate-100"
-    >
-      {unit === "celsius" ? (
-        <>
-          <Thermometer className="h-4 w-4" />
-          <span>°C</span>
-        </>
-      ) : (
-        <>
-          <ThermometerSnowflake className="h-4 w-4" />
-          <span>°F</span>
-        </>
-      )}
-    </Button>
+    <div className="flex items-center space-x-3">
+      <Thermometer className="h-4 w-4 text-white" />
+      <div className="flex items-center space-x-2">
+        <Label 
+          htmlFor="temp-unit" 
+          className={`text-sm font-medium cursor-pointer ${unit === 'celsius' ? 'text-white' : 'text-gray-300'}`}
+        >
+          °C
+        </Label>
+        <Switch
+          id="temp-unit"
+          checked={unit === 'fahrenheit'}
+          onCheckedChange={toggleUnit}
+          className="data-[state=checked]:bg-white data-[state=unchecked]:bg-white/50"
+        />
+        <Label 
+          htmlFor="temp-unit" 
+          className={`text-sm font-medium cursor-pointer ${unit === 'fahrenheit' ? 'text-white' : 'text-gray-300'}`}
+        >
+          °F
+        </Label>
+      </div>
+    </div>
   );
 }

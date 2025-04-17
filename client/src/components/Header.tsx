@@ -42,6 +42,9 @@ export default function Header() {
           </SheetTrigger>
           <SheetContent side="right" className="bg-[#1F6E6E] text-white">
             <div className="flex flex-col space-y-4 mt-8">
+              <div className="px-4 py-2 mb-2">
+                <TemperatureUnitToggle />
+              </div>
               <Link href="/" onClick={handleMenuItemClick} className="px-4 py-2 hover:bg-[#A67C52] rounded-md">Dashboard</Link>
               <a href="#" onClick={handleMenuItemClick} className="px-4 py-2 hover:bg-[#A67C52] rounded-md">Analytics</a>
               <a href="#" onClick={handleMenuItemClick} className="px-4 py-2 hover:bg-[#A67C52] rounded-md">Settings</a>
