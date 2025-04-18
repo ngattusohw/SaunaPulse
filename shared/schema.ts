@@ -108,9 +108,58 @@ export type FeedbackCounts = {
   tooHotPercent: number;
 };
 
+// Temperature readings with voting
+export const temperatureReadings = pgTable("temperature_readings", {
+  id: serial("id").primaryKey(),
+  facilityId: integer("facility_id").notNull(),
+  userId: integer("user_id"),
+  username: text("username").notNull(),
+  temperature: real("temperature").notNull(),
+  upvotes: integer("upvotes").default(0),
+  downvotes: integer("downvotes").default(0),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const insertTemperatureReadingSchema = createInsertSchema(temperatureReadings).pick({
+  facilityId: true,
+  userId: true,
+  username: true,
+  temperature: true,
+});
+
+// Votes on temperature readings
+export const temperatureVotes = pgTable("temperature_votes", {
+  id: serial("id").primaryKey(),
+  readingId: integer("reading_id").notNull(),
+  userId: integer("user_id"),
+  username: text("username").notNull(),
+  isUpvote: boolean("is_upvote").notNull(),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const insertTemperatureVoteSchema = createInsertSchema(temperatureVotes).pick({
+  readingId: true,
+  userId: true,
+  username: true,
+  isUpvote: true,
+});
+
+export type TemperatureReading = typeof temperatureReadings.$inferSelect;
+export type InsertTemperatureReading = z.infer<typeof insertTemperatureReadingSchema>;
+
+export type TemperatureVote = typeof temperatureVotes.$inferSelect;
+export type InsertTemperatureVote = z.infer<typeof insertTemperatureVoteSchema>;
+
+// Augmented temperature reading with weighted score
+export type WeightedTemperatureReading = TemperatureReading & {
+  weightedScore: number;
+  timeSinceSubmission: string;
+};
+
 // Facility with feedback counts
 export type FacilityWithFeedback = Facility & {
   feedback: FeedbackCounts;
   totalVotes: number;
   satisfactionPercent: number;
+  recentReadings?: WeightedTemperatureReading[];
 };
