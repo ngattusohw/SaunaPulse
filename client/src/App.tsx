@@ -6,6 +6,7 @@ import Dashboard from "@/pages/Dashboard";
 import NotFound from "@/pages/not-found";
 import { SocketProvider } from "./lib/socket";
 import { TemperatureUnitProvider } from "./lib/temperatureUnit.tsx";
+import OfflineIndicator from "@/components/OfflineIndicator";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <SocketProvider>
         <TemperatureUnitProvider>
           <Router />
+          <OfflineIndicator />
           <Toaster />
         </TemperatureUnitProvider>
       </SocketProvider>
