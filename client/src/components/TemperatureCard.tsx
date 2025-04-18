@@ -6,7 +6,7 @@ import { FacilityWithFeedback } from "@shared/schema";
 import { useSocket } from "@/lib/socket";
 import { useTemperatureUnit } from "@/lib/temperatureUnit.tsx";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowDown, ArrowUp, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowDown, ArrowUp, ThumbsDown, ThumbsUp, ChevronUp, ChevronDown } from "lucide-react";
 
 interface TemperatureCardProps {
   facility: FacilityWithFeedback;
@@ -18,7 +18,7 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
   const [prevTemp, setPrevTemp] = useState<number>(facility.currentTemp);
   const [changing, setChanging] = useState<boolean>(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<string>("");
-  const [tempInput, setTempInput] = useState<string>("");
+  const [tempValue, setTempValue] = useState<number>(facility.currentTemp);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   // Track previous temperature to show change indicator
@@ -50,17 +50,36 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
     submitFeedback(facility.id, undefined, rating);
   };
   
+  // Initialize temp value when facility temperature changes
+  useEffect(() => {
+    setTempValue(facility.currentTemp);
+  }, [facility.currentTemp]);
+
+  // Function to increment temperature value
+  const incrementTemp = () => {
+    setTempValue(prev => {
+      const step = unit === 'celsius' ? 0.1 : 0.2;
+      return parseFloat((prev + step).toFixed(1));
+    });
+  };
+
+  // Function to decrement temperature value
+  const decrementTemp = () => {
+    setTempValue(prev => {
+      const step = unit === 'celsius' ? 0.1 : 0.2;
+      return parseFloat((prev - step).toFixed(1));
+    });
+  };
+  
   // Handle temperature submission
   const handleTempSubmit = () => {
-    if (!tempInput || isNaN(parseFloat(tempInput))) return;
-    
     setSubmitting(true);
     
     // Get the temperature in Celsius (our storage format)
-    let celsiusTemp = parseFloat(tempInput);
+    let celsiusTemp = tempValue;
     if (unit === 'fahrenheit') {
       // Convert from Fahrenheit to Celsius
-      celsiusTemp = (celsiusTemp - 32) * 5/9;
+      celsiusTemp = (tempValue - 32) * 5/9;
     }
     
     // Submit temperature reading via websocket
@@ -78,8 +97,8 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
         }
       }));
       
-      // Clear the input and close the socket after sending
-      setTempInput("");
+      // Reset temperature value to current facility temp and close socket
+      setTempValue(facility.currentTemp);
       setSubmitting(false);
       socket.close();
     };
@@ -147,31 +166,39 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
           </div>
         </div>
         
-        {/* Temperature Input */}
+        {/* Temperature Input with Up/Down Controls */}
         <div className="border-t border-slate-200 pt-3 mb-3">
           <p className="text-sm text-slate-500 mb-2">Add Current Temperature</p>
           <div className="flex space-x-2">
-            <div className="flex-1">
-              <div className="relative">
-                <input 
-                  type="number" 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                  placeholder={`Enter ${unit === 'celsius' ? '°C' : '°F'} reading`}
-                  min="0"
-                  max={unit === 'celsius' ? '120' : '248'}
-                  step="0.1"
-                  value={tempInput}
-                  onChange={(e) => setTempInput(e.target.value)}
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
-                  {unit === 'celsius' ? '°C' : '°F'}
+            <div className="flex-1 flex items-center">
+              <div className="flex-1 flex items-center justify-between px-3 py-2 border border-slate-300 rounded-md">
+                <button 
+                  className="text-slate-500 hover:text-blue-600 focus:outline-none p-1"
+                  onClick={decrementTemp}
+                  type="button"
+                >
+                  <ChevronDown className="h-5 w-5" />
+                </button>
+                
+                <div className="text-xl font-medium flex items-center">
+                  {unit === 'celsius' 
+                    ? `${tempValue.toFixed(1)}°C` 
+                    : `${(tempValue * 9/5 + 32).toFixed(1)}°F`}
                 </div>
+                
+                <button 
+                  className="text-slate-500 hover:text-blue-600 focus:outline-none p-1"
+                  onClick={incrementTemp}
+                  type="button"
+                >
+                  <ChevronUp className="h-5 w-5" />
+                </button>
               </div>
             </div>
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white"
               onClick={handleTempSubmit}
-              disabled={submitting || !tempInput}
+              disabled={submitting}
             >
               {submitting ? "Submitting..." : "Submit"}
             </Button>
