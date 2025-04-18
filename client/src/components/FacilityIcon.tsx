@@ -1,8 +1,9 @@
 import { FiThermometer } from "react-icons/fi";
-import { GiSauna } from "react-icons/gi";
-import { TbIceCream } from "react-icons/tb";
+import { GiHotSurface, GiWaterDrop } from "react-icons/gi";
+import { TbTemperature } from "react-icons/tb";
 import { BsFlag } from "react-icons/bs";
 import { FaSnowflake } from "react-icons/fa";
+import { MdWaterDrop } from "react-icons/md";
 
 interface FacilityIconProps {
   iconName: string;
@@ -14,13 +15,13 @@ export default function FacilityIcon({ iconName, size = 24, className = "" }: Fa
   switch (iconName) {
     case "fi-fi":
       // Finnish sauna icon
-      return <SiSauna size={size} className={className} />;
+      return <GiHotSurface size={size} className={className} />;
     
     case "us-flag":
       // American sauna icon
       return (
         <div className={`relative ${className}`}>
-          <SiSauna size={size} />
+          <GiHotSurface size={size} />
           <BsFlag size={size/3} className="absolute -top-1 -right-1 text-red-600" />
         </div>
       );
