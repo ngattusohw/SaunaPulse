@@ -129,7 +129,7 @@ export class MemStorage implements IStorage {
 
       // Create default facilities
       const parnyanaFinnish = await this.createFacility({
-        name: "Parnyana Finnish",
+        name: "Bear Parnyana",
         currentTemp: 95,
         minTemp: 80,
         maxTemp: 100,
@@ -138,7 +138,7 @@ export class MemStorage implements IStorage {
       });
       
       const americanSauna = await this.createFacility({
-        name: "American Sauna",
+        name: "Bear American",
         currentTemp: 85,
         minTemp: 75,
         maxTemp: 95,
@@ -147,7 +147,7 @@ export class MemStorage implements IStorage {
       });
       
       const coldPlunge = await this.createFacility({
-        name: "Cold Plunge",
+        name: "Bear Cold Plunge",
         currentTemp: 7,
         minTemp: 5,
         maxTemp: 10,
