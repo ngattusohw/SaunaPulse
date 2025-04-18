@@ -5,7 +5,9 @@ import { WebSocketServer, WebSocket } from "ws";
 import { z } from "zod";
 import { 
   insertFeedbackSchema, 
-  insertChatMessageSchema 
+  insertChatMessageSchema,
+  insertTemperatureReadingSchema,
+  insertTemperatureVoteSchema
 } from "@shared/schema";
 import OpenAI from "openai";
 
@@ -67,6 +69,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'recent_feedbacks',
             payload: recentFeedbacks
           });
+        } else if (data.type === 'temperature_reading') {
+          // Handle temperature reading submission
+          const reading = insertTemperatureReadingSchema.parse(data.payload);
+          const savedReading = await storage.addTemperatureReading(reading);
+          
+          // Get updated facilities with current readings
+          const facilities = await storage.getFacilitiesWithFeedback();
+          
+          // Broadcast updated facilities with temperature readings
+          broadcastToAll({
+            type: 'facilities_update',
+            payload: facilities
+          });
+          
+          // Broadcast the new temperature reading
+          broadcastToAll({
+            type: 'new_temperature_reading',
+            payload: savedReading
+          });
+        } else if (data.type === 'temperature_vote') {
+          // Handle vote on temperature reading
+          const vote = insertTemperatureVoteSchema.parse(data.payload);
+          await storage.voteOnTemperatureReading(vote);
+          
+          // Get updated facilities with current readings
+          const facilities = await storage.getFacilitiesWithFeedback();
+          
+          // Broadcast updated facilities with temperature readings
+          broadcastToAll({
+            type: 'facilities_update',
+            payload: facilities
+          });
         }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);
@@ -86,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Helper function to send initial data to a client
   async function sendInitialData(ws: WebSocket) {
     try {
-      // Send facilities data
+      // Send facilities data with feedback and temperature readings
       const facilities = await storage.getFacilitiesWithFeedback();
       ws.send(JSON.stringify({
         type: 'facilities_update',
@@ -280,6 +314,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error submitting feedback:', error);
       res.status(400).json({ message: 'Invalid feedback data' });
+    }
+  });
+
+  // Submit temperature reading
+  app.post('/api/temperature-readings', async (req, res) => {
+    try {
+      const reading = insertTemperatureReadingSchema.parse(req.body);
+      const savedReading = await storage.addTemperatureReading(reading);
+      res.status(201).json(savedReading);
+    } catch (error) {
+      console.error('Error submitting temperature reading:', error);
+      res.status(400).json({ message: 'Invalid temperature reading data' });
+    }
+  });
+
+  // Get recent temperature readings for a facility
+  app.get('/api/facilities/:id/temperature-readings', async (req, res) => {
+    try {
+      const facilityId = parseInt(req.params.id);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      
+      const readings = await storage.getRecentTemperatureReadings(facilityId, limit);
+      res.json(readings);
+    } catch (error) {
+      console.error('Error fetching temperature readings:', error);
+      res.status(500).json({ message: 'Failed to fetch temperature readings' });
+    }
+  });
+
+  // Vote on a temperature reading
+  app.post('/api/temperature-readings/:id/vote', async (req, res) => {
+    try {
+      const readingId = parseInt(req.params.id);
+      const { userId, username, isUpvote } = req.body;
+      
+      const vote = {
+        readingId,
+        userId,
+        username,
+        isUpvote: Boolean(isUpvote)
+      };
+      
+      const savedVote = await storage.voteOnTemperatureReading(vote);
+      res.status(201).json(savedVote);
+    } catch (error) {
+      console.error('Error submitting vote:', error);
+      res.status(400).json({ message: 'Invalid vote data' });
     }
   });
 
