@@ -1,5 +1,5 @@
-const fs = require('fs');
-const { createCanvas, loadImage } = require('canvas');
+import fs from 'fs';
+import { createCanvas, loadImage } from 'canvas';
 
 async function convertSvgToPng(svgPath, pngPath, width, height) {
   // Create a canvas with the specified dimensions
