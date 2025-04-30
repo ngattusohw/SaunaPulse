@@ -163,7 +163,7 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
             </div>
           </div>
           <div className={`text-5xl ${facility.colorClass.replace('bg-', 'text-')}`}>
-            <i className={facility.icon}></i>
+            <FacilityIcon iconName={facility.icon} size={48} />
           </div>
         </div>
         
