@@ -34,10 +34,12 @@ export default function HistoricalDataChart({ facilities }: HistoricalDataChartP
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   // Colors for different facilities
-  const facilityColors = {
+  const facilityColors: {[key: string]: {border: string, background: string}} = {
     "Bear Parnyana": { border: "#F59E0B", background: "rgba(245, 158, 11, 0.1)" },
     "Bear American": { border: "#EF4444", background: "rgba(239, 68, 68, 0.1)" },
-    "Bear Cold Plunge": { border: "#3B82F6", background: "rgba(59, 130, 246, 0.1)" }
+    "Bear Cold Plunge": { border: "#3B82F6", background: "rgba(59, 130, 246, 0.1)" },
+    // Add fallback for any other facilities
+    "default": { border: "#94A3B8", background: "rgba(148, 163, 184, 0.1)" }
   };
 
   // Fetch historical data
@@ -87,7 +89,8 @@ export default function HistoricalDataChart({ facilities }: HistoricalDataChartP
         
         // Add dataset for this facility
         const facilityName = facility.name;
-        const colors = facilityColors[facilityName as keyof typeof facilityColors];
+        // Use facility colors if available, otherwise use default
+        const colors = facilityColors[facilityName] || facilityColors['default'];
         
         datasets.push({
           label: facilityName,
