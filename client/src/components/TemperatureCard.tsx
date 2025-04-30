@@ -14,10 +14,12 @@ interface TemperatureCardProps {
 
 export default function TemperatureCard({ facility }: TemperatureCardProps) {
   const { submitFeedback } = useSocket();
-  const { formatTemp, unit } = useTemperatureUnit();
+  const { formatTemp, unit, convertTemp } = useTemperatureUnit();
   const [prevTemp, setPrevTemp] = useState<number>(facility.currentTemp);
   const [changing, setChanging] = useState<boolean>(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<string>("");
+  const [tempInput, setTempInput] = useState<string>("");
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   // Track previous temperature to show change indicator
   useEffect(() => {
@@ -46,6 +48,29 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
   // Handle feedback submission
   const handleFeedback = (rating: string) => {
     submitFeedback(facility.id, undefined, rating);
+  };
+  
+  // Handle temperature submission
+  const handleTempSubmit = () => {
+    if (!tempInput || isNaN(parseFloat(tempInput))) return;
+    
+    setSubmitting(true);
+    
+    // Get the temperature in Celsius (our storage format)
+    let celsiusTemp = parseFloat(tempInput);
+    if (unit === 'fahrenheit') {
+      // Convert from Fahrenheit to Celsius
+      celsiusTemp = (celsiusTemp - 32) * 5/9;
+    }
+    
+    // For now we'll just log it, later we'll submit to the backend
+    console.log(`Submitting temperature for ${facility.name}: ${celsiusTemp.toFixed(1)}°C`);
+    
+    // Clear the input
+    setTempInput("");
+    setSubmitting(false);
+    
+    // TODO: Add API call to submit temperature
   };
 
   // Determine temperature trend indicator
@@ -105,9 +130,67 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
           </div>
         </div>
         
-        {/* Feedback Buttons */}
+        {/* Temperature Input */}
         <div className="border-t border-slate-200 pt-3 mb-3">
-          <p className="text-sm text-slate-500 mb-2">How does it feel?</p>
+          <p className="text-sm text-slate-500 mb-2">Add Current Temperature</p>
+          <div className="flex space-x-2">
+            <div className="flex-1">
+              <div className="relative">
+                <input 
+                  type="number" 
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  placeholder={`Enter ${unit === 'celsius' ? '°C' : '°F'} reading`}
+                  min="0"
+                  max={unit === 'celsius' ? '120' : '248'}
+                  step="0.1"
+                  value={tempInput}
+                  onChange={(e) => setTempInput(e.target.value)}
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
+                  {unit === 'celsius' ? '°C' : '°F'}
+                </div>
+              </div>
+            </div>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleTempSubmit}
+              disabled={submitting || !tempInput}
+            >
+              {submitting ? "Submitting..." : "Submit"}
+            </Button>
+          </div>
+        </div>
+        
+        {/* Recent Temperature Readings */}
+        <div className="mb-3">
+          <p className="text-sm text-slate-500 mb-2">Recent Readings</p>
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            <div className="flex items-center justify-between p-2 bg-slate-50 rounded">
+              <div>
+                <span className="font-medium">{formatTemp(95)}</span>
+                <span className="text-xs text-slate-500 ml-2">5m ago</span>
+              </div>
+              <div className="flex space-x-2">
+                <button className="text-slate-500 hover:text-green-600"><i className="text-xs">👍 4</i></button>
+                <button className="text-slate-500 hover:text-red-600"><i className="text-xs">👎 1</i></button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-slate-50 rounded">
+              <div>
+                <span className="font-medium">{formatTemp(93)}</span>
+                <span className="text-xs text-slate-500 ml-2">12m ago</span>
+              </div>
+              <div className="flex space-x-2">
+                <button className="text-slate-500 hover:text-green-600"><i className="text-xs">👍 2</i></button>
+                <button className="text-slate-500 hover:text-red-600"><i className="text-xs">👎 0</i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Comfort Feedback (moved below temperature input) */}
+        <div className="border-t border-slate-200 pt-3 mb-3">
+          <p className="text-sm text-slate-500 mb-2">Comfort Rating</p>
           <div className="flex space-x-2">
             <Button
               variant="outline"
