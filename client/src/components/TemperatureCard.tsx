@@ -51,53 +51,63 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
     submitFeedback(facility.id, undefined, rating);
   };
   
-  // Initialize temp value when facility temperature changes or unit changes
+  // Store temperature in Celsius internally, but display in the selected unit
+  const [internalTemp, setInternalTemp] = useState<number>(facility.currentTemp);
+  
+  // Initialize internal temp value when facility temperature changes
   useEffect(() => {
-    // If unit is fahrenheit and we have celsius temperature in state,
-    // we don't want to convert it to fahrenheit and then store that in state
-    // We should keep celsius in state and convert only for display
+    setInternalTemp(facility.currentTemp);
     setTempValue(facility.currentTemp);
   }, [facility.currentTemp]);
+  
+  // Update display temperature when unit changes
+  useEffect(() => {
+    // When unit changes, convert internal celsius temperature to the displayed unit
+    if (unit === 'celsius') {
+      setTempValue(internalTemp);
+    } else {
+      // Convert from Celsius to Fahrenheit for display
+      setTempValue((internalTemp * 9/5) + 32);
+    }
+  }, [unit, internalTemp]);
 
   // Function to increment temperature value
   const incrementTemp = () => {
-    setTempValue(prev => {
-      if (unit === 'celsius') {
-        // If in Celsius, just add 0.1°C
-        return parseFloat((prev + 0.1).toFixed(1));
-      } else {
-        // If in Fahrenheit, convert to Celsius first, add 0.1°C, then convert back
-        // But actually, we store in Celsius, so just add 0.1°C equivalent directly
-        return parseFloat((prev + (0.1 * 5/9)).toFixed(1));
-      }
-    });
+    if (unit === 'celsius') {
+      // In Celsius mode, increment by 0.1°C and update both internal and display values
+      const newTemp = parseFloat((internalTemp + 0.1).toFixed(1));
+      setInternalTemp(newTemp);
+      setTempValue(newTemp);
+    } else {
+      // In Fahrenheit mode, increment by 0.2°F
+      const newTempF = parseFloat((tempValue + 0.2).toFixed(1));
+      setTempValue(newTempF);
+      // Convert back to Celsius for internal storage
+      setInternalTemp(((newTempF - 32) * 5/9));
+    }
   };
 
   // Function to decrement temperature value
   const decrementTemp = () => {
-    setTempValue(prev => {
-      if (unit === 'celsius') {
-        // If in Celsius, just subtract 0.1°C
-        return parseFloat((prev - 0.1).toFixed(1));
-      } else {
-        // If in Fahrenheit, we want to subtract 0.1°C equivalent
-        return parseFloat((prev - (0.1 * 5/9)).toFixed(1));
-      }
-    });
+    if (unit === 'celsius') {
+      // In Celsius mode, decrement by 0.1°C and update both internal and display values
+      const newTemp = parseFloat((internalTemp - 0.1).toFixed(1));
+      setInternalTemp(newTemp);
+      setTempValue(newTemp);
+    } else {
+      // In Fahrenheit mode, decrement by 0.2°F
+      const newTempF = parseFloat((tempValue - 0.2).toFixed(1));
+      setTempValue(newTempF);
+      // Convert back to Celsius for internal storage
+      setInternalTemp(((newTempF - 32) * 5/9));
+    }
   };
   
   // Handle temperature submission
   const handleTempSubmit = () => {
     setSubmitting(true);
     
-    // Get the temperature in Celsius (our storage format)
-    let celsiusTemp = tempValue;
-    if (unit === 'fahrenheit') {
-      // Convert from Fahrenheit to Celsius
-      celsiusTemp = (tempValue - 32) * 5/9;
-    }
-    
-    // Submit temperature reading via websocket
+    // Submit temperature reading via websocket - always use the internal celsius temperature
     const socket = new WebSocket(
       `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
     );
@@ -108,12 +118,18 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
         payload: {
           username: 'Anonymous User',
           facilityId: facility.id,
-          temperature: parseFloat(celsiusTemp.toFixed(1)),
+          temperature: parseFloat(internalTemp.toFixed(1)),
         }
       }));
       
-      // Reset temperature value to current facility temp and close socket
-      setTempValue(facility.currentTemp);
+      // Reset temperature values to current facility temp and close socket
+      setInternalTemp(facility.currentTemp);
+      // Update displayed temp based on unit
+      if (unit === 'celsius') {
+        setTempValue(facility.currentTemp);
+      } else {
+        setTempValue((facility.currentTemp * 9/5) + 32);
+      }
       setSubmitting(false);
       socket.close();
     };
@@ -201,7 +217,7 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
                 <div className="text-xl font-medium flex items-center">
                   {unit === 'celsius' 
                     ? `${tempValue.toFixed(1)}°C` 
-                    : `${((tempValue * 9/5) + 32).toFixed(1)}°F`}
+                    : `${tempValue.toFixed(1)}°F`}
                 </div>
                 
                 <button 
