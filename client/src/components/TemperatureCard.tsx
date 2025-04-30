@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { FacilityWithFeedback } from "@shared/schema";
 import { useSocket } from "@/lib/socket";
-import { useTemperatureUnit } from "@/lib/temperatureUnit";
+import { useTemperatureUnit } from "@/lib/temperatureUnit.tsx";
 import { formatDistanceToNow } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
 

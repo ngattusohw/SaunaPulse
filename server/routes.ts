@@ -157,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               payload: {
                 facilityName: updatedFacility.name,
                 temperature: newTemp,
-                message: `${updatedFacility.name} is currently ${newTemp > updatedFacility.maxTemp ? 'above' : 'below'} the recommended temperature range (${newTemp > updatedFacility.maxTemp ? updatedFacility.maxTemp : updatedFacility.minTemp}°C).`
+                message: `${updatedFacility.name} is currently ${newTemp > updatedFacility.maxTemp ? 'above' : 'below'} the recommended temperature range (${newTemp > updatedFacility.maxTemp ? updatedFacility.maxTemp : updatedFacility.minTemp}°).`
               }
             });
           }
@@ -204,7 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Format facility data for the prompt
       const facilityData = facilities.map(f => 
-        `${f.name} (${f.currentTemp}°C, range: ${f.minTemp}-${f.maxTemp}°C)`
+        `${f.name} (${f.currentTemp}°, range: ${f.minTemp}-${f.maxTemp}°)`
       ).join(', ');
       
       // Define the prompt for OpenAI
@@ -231,8 +231,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Parse and return the recommendation
-      const recommendations = JSON.parse(response.choices[0].message.content);
-      res.json(recommendations);
+      if (response.choices[0].message.content) {
+        const recommendations = JSON.parse(response.choices[0].message.content);
+        res.json(recommendations);
+      } else {
+        throw new Error("No content in API response");
+      }
     } catch (error) {
       console.error('Error generating AI recommendations:', error);
       res.json({
