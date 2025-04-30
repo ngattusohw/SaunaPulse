@@ -71,8 +71,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         } else if (data.type === 'temperature_reading') {
           // Handle temperature reading submission
+          console.log('Received temperature reading submission:', data.payload);
           const reading = insertTemperatureReadingSchema.parse(data.payload);
+          console.log('Parsed temperature reading (Celsius):', reading.temperature);
           const savedReading = await storage.addTemperatureReading(reading);
+          console.log('Saved temperature reading:', savedReading);
           
           // Get updated facilities with current readings
           const facilities = await storage.getFacilitiesWithFeedback();

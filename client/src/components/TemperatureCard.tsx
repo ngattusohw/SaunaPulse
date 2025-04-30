@@ -153,12 +153,17 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
   const handleTempSubmit = () => {
     setSubmitting(true);
     
+    // Debug logging
+    console.log(`Submitting temperature: ${internalTemp.toFixed(1)}°C (${tempValue.toFixed(1)}°${unit === 'celsius' ? 'C' : 'F'})`);
+    
     // Submit temperature reading via websocket - always use the internal celsius temperature
     const socket = new WebSocket(
       `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
     );
     
     socket.onopen = () => {
+      // Important: We're already storing the Celsius value in internalTemp,
+      // no need to convert from Fahrenheit again if unit is fahrenheit
       socket.send(JSON.stringify({
         type: 'temperature_reading',
         payload: {
