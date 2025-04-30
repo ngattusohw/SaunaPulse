@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "@/pages/Dashboard";
 import NotFound from "@/pages/not-found";
 import { SocketProvider } from "./lib/socket";
+import { TemperatureUnitProvider } from "./lib/temperatureUnit.tsx";
 
 function Router() {
   return (
@@ -19,8 +20,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SocketProvider>
-        <Router />
-        <Toaster />
+        <TemperatureUnitProvider>
+          <Router />
+          <Toaster />
+        </TemperatureUnitProvider>
       </SocketProvider>
     </QueryClientProvider>
   );

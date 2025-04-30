@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FacilityWithFeedback } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { useTemperatureUnit } from "@/lib/temperatureUnit.tsx";
 import Chart from "chart.js/auto";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -26,6 +27,7 @@ interface ChartData {
 export default function HistoricalDataChart({ facilities }: HistoricalDataChartProps) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<Chart | null>(null);
+  const { unit, convertTemp } = useTemperatureUnit();
   const [selectedFacility, setSelectedFacility] = useState<string>("all");
   const [timeRange, setTimeRange] = useState<string>("24");
   const [loading, setLoading] = useState<boolean>(true);
@@ -79,7 +81,8 @@ export default function HistoricalDataChart({ facilities }: HistoricalDataChartP
           const hourIndex = hours - 1 - Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
           
           if (hourIndex >= 0 && hourIndex < hours) {
-            data[hourIndex] = record.temperature;
+            // Convert temperature if needed
+            data[hourIndex] = convertTemp(record.temperature);
           }
         });
         
@@ -114,7 +117,7 @@ export default function HistoricalDataChart({ facilities }: HistoricalDataChartP
     if (facilities.length === 0) return;
     
     fetchHistoricalData();
-  }, [facilities, selectedFacility, timeRange]);
+  }, [facilities, selectedFacility, timeRange, unit]);
 
   // Create or update chart when data changes
   useEffect(() => {
@@ -140,6 +143,10 @@ export default function HistoricalDataChart({ facilities }: HistoricalDataChartP
             beginAtZero: false,
             grid: {
               color: "rgba(107, 114, 128, 0.1)"
+            },
+            title: {
+              display: true,
+              text: `Temperature (°${unit === 'celsius' ? 'C' : 'F'})`
             }
           },
           x: {
