@@ -28,9 +28,6 @@ export default function Header() {
         <nav className="hidden md:block">
           <ul className="flex space-x-6">
             <li><Link href="/" className="hover:text-[#93C5FD] transition">Dashboard</Link></li>
-            <li><a href="#" className="hover:text-[#93C5FD] transition">Analytics</a></li>
-            <li><a href="#" className="hover:text-[#93C5FD] transition">Settings</a></li>
-            <li><a href="#" className="hover:text-[#93C5FD] transition">Help</a></li>
           </ul>
         </nav>
         
@@ -46,9 +43,6 @@ export default function Header() {
                 <TemperatureUnitToggle />
               </div>
               <Link href="/" onClick={handleMenuItemClick} className="px-4 py-2 hover:bg-[#A67C52] rounded-md">Dashboard</Link>
-              <a href="#" onClick={handleMenuItemClick} className="px-4 py-2 hover:bg-[#A67C52] rounded-md">Analytics</a>
-              <a href="#" onClick={handleMenuItemClick} className="px-4 py-2 hover:bg-[#A67C52] rounded-md">Settings</a>
-              <a href="#" onClick={handleMenuItemClick} className="px-4 py-2 hover:bg-[#A67C52] rounded-md">Help</a>
             </div>
           </SheetContent>
         </Sheet>

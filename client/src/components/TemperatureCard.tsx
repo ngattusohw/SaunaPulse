@@ -144,7 +144,10 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
   return (
     <Card className="overflow-hidden border border-slate-200">
       <CardHeader className={`${facility.colorClass} text-white py-3 px-4`}>
-        <h3 className="font-heading font-semibold text-lg">{facility.name}</h3>
+        <h3 className="font-heading font-semibold text-lg flex items-center">
+          <FacilityIcon iconName={facility.icon} size={20} className="mr-2 text-white" />
+          {facility.name}
+        </h3>
       </CardHeader>
       <CardContent className="p-4">
         <div className="flex justify-between items-center mb-4">
