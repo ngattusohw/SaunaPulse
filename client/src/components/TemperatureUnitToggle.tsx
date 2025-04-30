@@ -1,4 +1,4 @@
-import { useTemperatureUnit } from "@/lib/temperatureUnit.tsx";
+import { useTemperatureUnit } from "@/lib/temperatureUnit";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Thermometer } from "lucide-react";

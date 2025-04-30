@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FacilityWithFeedback } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { useTemperatureUnit } from "@/lib/temperatureUnit.tsx";
+import { useTemperatureUnit } from "@/lib/temperatureUnit";
 import Chart from "chart.js/auto";
 import { Skeleton } from "@/components/ui/skeleton";
 

@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FacilityWithFeedback } from "@shared/schema";
 import { useSocket } from "@/lib/socket";
-import { useTemperatureUnit } from "@/lib/temperatureUnit.tsx";
+import { useTemperatureUnit } from "@/lib/temperatureUnit";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowDown, ArrowUp, ThumbsDown, ThumbsUp, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ThumbsDown, ThumbsUp, ChevronUp, ChevronDown, Dices } from "lucide-react";
 import FacilityIcon from "./FacilityIcon";
 
 interface TemperatureCardProps {
@@ -71,7 +74,45 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
     }
   }, [unit, internalTemp]);
 
-  // Function to increment temperature value
+  // Tracking for manual temperature input
+  const [isManualInputOpen, setIsManualInputOpen] = useState<boolean>(false);
+  const [manualInputValue, setManualInputValue] = useState<string>("");
+  
+  // Define min/max values based on facility type and temperature unit
+  const minTemp = facility.name.includes("Cold Plunge") 
+    ? (unit === 'celsius' ? 0 : 32) 
+    : (unit === 'celsius' ? 50 : 122);
+  
+  const maxTemp = facility.name.includes("Cold Plunge") 
+    ? (unit === 'celsius' ? 15 : 59) 
+    : (unit === 'celsius' ? 110 : 230);
+  
+  const stepSize = facility.name.includes("Cold Plunge") 
+    ? 0.1 
+    : (unit === 'celsius' ? 0.5 : 1.0);
+  
+  // The slider change is now handled directly in the input element's onChange event
+  
+  // Handle manual input submission
+  const handleManualInputSubmit = () => {
+    const newValue = parseFloat(manualInputValue);
+    if (!isNaN(newValue)) {
+      setTempValue(newValue);
+      
+      // Update internal Celsius temperature
+      if (unit === 'celsius') {
+        setInternalTemp(newValue);
+      } else {
+        // Convert from Fahrenheit to Celsius for internal storage
+        setInternalTemp(((newValue - 32) * 5/9));
+      }
+      
+      // Close the dialog
+      setIsManualInputOpen(false);
+    }
+  };
+  
+  // Functions for increment/decrement buttons (keeping them for reference)
   const incrementTemp = () => {
     if (unit === 'celsius') {
       // In Celsius mode, increment by 0.1°C and update both internal and display values
@@ -87,7 +128,6 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
     }
   };
 
-  // Function to decrement temperature value
   const decrementTemp = () => {
     if (unit === 'celsius') {
       // In Celsius mode, decrement by 0.1°C and update both internal and display values
@@ -200,41 +240,105 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
           </div>
         </div>
         
-        {/* Temperature Input with Up/Down Controls */}
+        {/* Temperature Input with Slider and Dialog */}
         <div className="border-t border-slate-200 pt-3 mb-3">
           <p className="text-sm text-slate-500 mb-2">Add Current Temperature</p>
-          <div className="flex space-x-2">
-            <div className="flex-1 flex items-center">
-              <div className="flex-1 flex items-center justify-between px-3 py-2 border border-slate-300 rounded-md">
-                <button 
-                  className="text-slate-500 hover:text-blue-600 focus:outline-none p-1"
-                  onClick={decrementTemp}
-                  type="button"
-                >
-                  <ChevronDown className="h-5 w-5" />
+          <div className="space-y-5">
+            {/* Temperature display with click-to-edit */}
+            <Dialog 
+              open={isManualInputOpen} 
+              onOpenChange={(open) => {
+                setIsManualInputOpen(open);
+                if (open) {
+                  // Set the manual input value to the current temperature
+                  setManualInputValue(tempValue.toString());
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <button className="w-full flex justify-center">
+                  <div className="text-2xl font-medium px-6 py-2 rounded-md border border-slate-200 hover:border-blue-400 transition-colors cursor-pointer flex items-center">
+                    {unit === 'celsius' 
+                      ? `${tempValue.toFixed(1)}°C` 
+                      : `${tempValue.toFixed(1)}°F`}
+                  </div>
                 </button>
-                
-                <div className="text-xl font-medium flex items-center">
-                  {unit === 'celsius' 
-                    ? `${tempValue.toFixed(1)}°C` 
-                    : `${tempValue.toFixed(1)}°F`}
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Enter Temperature</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Input 
+                      id="temperature" 
+                      type="number" 
+                      className="col-span-3"
+                      placeholder={`Temperature in ${unit === 'celsius' ? 'Celsius' : 'Fahrenheit'}`}
+                      step={stepSize}
+                      min={minTemp}
+                      max={maxTemp}
+                      value={manualInputValue} 
+                      onChange={(e) => setManualInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleManualInputSubmit();
+                        }
+                      }}
+                    />
+                    <span className="text-lg">{unit === 'celsius' ? '°C' : '°F'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsManualInputOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={handleManualInputSubmit}>
+                      Apply
+                    </Button>
+                  </div>
                 </div>
-                
-                <button 
-                  className="text-slate-500 hover:text-blue-600 focus:outline-none p-1"
-                  onClick={incrementTemp}
-                  type="button"
-                >
-                  <ChevronUp className="h-5 w-5" />
-                </button>
+              </DialogContent>
+            </Dialog>
+            
+            {/* Temperature Controls */}
+            <div className="px-1">
+              {/* Custom Temperature Input Range */}
+              <div className="relative pt-4 pb-2">
+                <input 
+                  type="range"
+                  min={minTemp}
+                  max={maxTemp}
+                  step={stepSize}
+                  value={tempValue}
+                  onChange={(e) => {
+                    const newValue = parseFloat(e.target.value);
+                    if (unit === 'celsius') {
+                      setInternalTemp(newValue);
+                      setTempValue(newValue);
+                    } else {
+                      setTempValue(newValue);
+                      setInternalTemp(((newValue - 32) * 5/9));
+                    }
+                  }}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <span>{minTemp}°{unit === 'celsius' ? 'C' : 'F'}</span>
+                  <span>{maxTemp}°{unit === 'celsius' ? 'C' : 'F'}</span>
+                </div>
               </div>
             </div>
+            
+            {/* Submit Button */}
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className={`${facility.colorClass} hover:opacity-90 text-white w-full`}
               onClick={handleTempSubmit}
               disabled={submitting}
             >
-              {submitting ? "Submitting..." : "Submit"}
+              {submitting ? "Submitting..." : "Submit Temperature"}
             </Button>
           </div>
         </div>
