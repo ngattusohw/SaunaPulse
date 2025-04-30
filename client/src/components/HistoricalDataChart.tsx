@@ -35,10 +35,9 @@ export default function HistoricalDataChart({ facilities }: HistoricalDataChartP
 
   // Colors for different facilities
   const facilityColors = {
-    "Sauna 1": { border: "#F59E0B", background: "rgba(245, 158, 11, 0.1)" },
-    "Sauna 2": { border: "#EF4444", background: "rgba(239, 68, 68, 0.1)" },
-    "Steam Room": { border: "#6B7280", background: "rgba(107, 114, 128, 0.1)" },
-    "Cold Plunge": { border: "#3B82F6", background: "rgba(59, 130, 246, 0.1)" }
+    "Bear Parnyana": { border: "#F59E0B", background: "rgba(245, 158, 11, 0.1)" },
+    "Bear American": { border: "#EF4444", background: "rgba(239, 68, 68, 0.1)" },
+    "Bear Cold Plunge": { border: "#3B82F6", background: "rgba(59, 130, 246, 0.1)" }
   };
 
   // Fetch historical data

@@ -18,7 +18,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center">
           <TreePine className="w-6 h-6 mr-2" />
-          <h1 className="text-xl md:text-2xl font-heading font-bold">Bear & Birch</h1>
+          <h1 className="text-xl md:text-2xl font-heading font-bold">Bear Sauna</h1>
         </div>
         
         {/* Temperature Unit Toggle */}
