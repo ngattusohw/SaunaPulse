@@ -7,6 +7,7 @@ import { useSocket } from "@/lib/socket";
 import { useTemperatureUnit } from "@/lib/temperatureUnit.tsx";
 import { formatDistanceToNow } from "date-fns";
 import { ArrowDown, ArrowUp, ThumbsDown, ThumbsUp, ChevronUp, ChevronDown } from "lucide-react";
+import FacilityIcon from "./FacilityIcon";
 
 interface TemperatureCardProps {
   facility: FacilityWithFeedback;

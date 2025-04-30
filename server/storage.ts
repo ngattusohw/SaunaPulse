@@ -128,31 +128,22 @@ export class MemStorage implements IStorage {
       });
 
       // Create default facilities
-      const sauna1 = await this.createFacility({
-        name: "Sauna 1",
+      const parnyanaFinnish = await this.createFacility({
+        name: "Parnyana Finnish",
         currentTemp: 95,
         minTemp: 80,
         maxTemp: 100,
-        icon: "ri-fire-line",
-        colorClass: "bg-warmAccent"
+        icon: "fi-fi",
+        colorClass: "bg-amber-600"
       });
       
-      const sauna2 = await this.createFacility({
-        name: "Sauna 2",
+      const americanSauna = await this.createFacility({
+        name: "American Sauna",
         currentTemp: 85,
         minTemp: 75,
         maxTemp: 95,
-        icon: "ri-fire-line",
-        colorClass: "bg-warmAccent"
-      });
-      
-      const steamRoom = await this.createFacility({
-        name: "Steam Room",
-        currentTemp: 45,
-        minTemp: 40,
-        maxTemp: 50,
-        icon: "ri-cloud-line",
-        colorClass: "bg-slate-600"
+        icon: "us-flag",
+        colorClass: "bg-red-600"
       });
       
       const coldPlunge = await this.createFacility({
@@ -160,19 +151,18 @@ export class MemStorage implements IStorage {
         currentTemp: 7,
         minTemp: 5,
         maxTemp: 10,
-        icon: "ri-snowy-line",
-        colorClass: "bg-coolAccent"
+        icon: "ice-cube",
+        colorClass: "bg-blue-600"
       });
 
       // Add some initial temperature history (24 hours)
       const now = new Date();
-      const facilities = [sauna1, sauna2, steamRoom, coldPlunge];
-      const saunaData = [92, 93, 90, 91, 92, 94, 95, 94, 93, 92, 91, 92, 94, 94, 93, 92, 93, 94, 95, 96, 95, 94, 93, 95];
-      const sauna2Data = [82, 83, 84, 84, 85, 86, 87, 87, 88, 88, 87, 86, 85, 85, 85, 84, 84, 83, 84, 85, 86, 87, 88, 85];
-      const steamRoomData = [42, 42, 43, 43, 44, 44, 44, 45, 45, 45, 46, 46, 46, 45, 45, 44, 44, 43, 43, 44, 44, 45, 45, 45];
+      const facilities = [parnyanaFinnish, americanSauna, coldPlunge];
+      const finnishData = [92, 93, 90, 91, 92, 94, 95, 94, 93, 92, 91, 92, 94, 94, 93, 92, 93, 94, 95, 96, 95, 94, 93, 95];
+      const americanData = [82, 83, 84, 84, 85, 86, 87, 87, 88, 88, 87, 86, 85, 85, 85, 84, 84, 83, 84, 85, 86, 87, 88, 85];
       const coldPlungeData = [8, 8, 8, 9, 9, 9, 9, 8, 8, 8, 7, 7, 7, 7, 7, 6, 6, 6, 7, 7, 7, 8, 8, 7];
       
-      const allData = [saunaData, sauna2Data, steamRoomData, coldPlungeData];
+      const allData = [finnishData, americanData, coldPlungeData];
       
       for (let i = 0; i < facilities.length; i++) {
         const facility = facilities[i];
@@ -196,17 +186,13 @@ export class MemStorage implements IStorage {
       }
       
       // Add some initial feedback
-      await this.addFeedback({ facilityId: sauna1.id, userId: mikeUser.id, rating: "too-hot" });
-      await this.addFeedback({ facilityId: sauna1.id, userId: jennyUser.id, rating: "perfect" });
-      await this.addFeedback({ facilityId: sauna1.id, userId: sarahUser.id, rating: "perfect" });
+      await this.addFeedback({ facilityId: parnyanaFinnish.id, userId: mikeUser.id, rating: "too-hot" });
+      await this.addFeedback({ facilityId: parnyanaFinnish.id, userId: jennyUser.id, rating: "perfect" });
+      await this.addFeedback({ facilityId: parnyanaFinnish.id, userId: sarahUser.id, rating: "perfect" });
       
-      await this.addFeedback({ facilityId: sauna2.id, userId: mikeUser.id, rating: "perfect" });
-      await this.addFeedback({ facilityId: sauna2.id, userId: jennyUser.id, rating: "perfect" });
-      await this.addFeedback({ facilityId: sauna2.id, userId: sarahUser.id, rating: "too-cold" });
-      
-      await this.addFeedback({ facilityId: steamRoom.id, userId: mikeUser.id, rating: "perfect" });
-      await this.addFeedback({ facilityId: steamRoom.id, userId: jennyUser.id, rating: "perfect" });
-      await this.addFeedback({ facilityId: steamRoom.id, userId: sarahUser.id, rating: "too-hot" });
+      await this.addFeedback({ facilityId: americanSauna.id, userId: mikeUser.id, rating: "perfect" });
+      await this.addFeedback({ facilityId: americanSauna.id, userId: jennyUser.id, rating: "perfect" });
+      await this.addFeedback({ facilityId: americanSauna.id, userId: sarahUser.id, rating: "too-cold" });
       
       await this.addFeedback({ facilityId: coldPlunge.id, userId: mikeUser.id, rating: "perfect" });
       await this.addFeedback({ facilityId: coldPlunge.id, userId: jennyUser.id, rating: "perfect" });
@@ -217,49 +203,49 @@ export class MemStorage implements IStorage {
         userId: staffUser.id,
         username: "Staff",
         isStaff: true,
-        message: "Good morning everyone! We've just refreshed the water in the cold plunge, and it's at an optimal 7°C now. Sauna 1 is running a bit hot today, but we're adjusting it."
+        message: "Good morning everyone! We've just refreshed the water in the cold plunge, and it's at an optimal 7°C now. The Parnyana Finnish sauna is running a bit hot today, but we're adjusting it."
       });
       
       await this.addChatMessage({
         userId: mikeUser.id,
         username: "Mike T.",
         isStaff: false,
-        message: "Thanks for the update! Sauna 1 is definitely running hot. Just gave my feedback."
+        message: "Thanks for the update! The Finnish sauna is definitely running hot. Just gave my feedback."
       });
       
       await this.addChatMessage({
         userId: jennyUser.id,
         username: "Jenny S.",
         isStaff: false,
-        message: "The steam room is perfect today! Really helping with my sinuses. How long is everyone staying in for?"
+        message: "The American Sauna is perfect today! Really helping with my sinuses. How long is everyone staying in for?"
       });
       
       await this.addChatMessage({
         userId: sarahUser.id,
         username: "Sarah D.",
         isStaff: false,
-        message: "I'm doing about 10 mins in the steam room, then heading to the cold plunge. It feels a bit too cold for me today though!"
+        message: "I'm doing about 10 mins in the American Sauna, then heading to the cold plunge. It feels a bit too cold for me today though!"
       });
       
       await this.addChatMessage({
         userId: staffUser.id,
         username: "Staff",
         isStaff: true,
-        message: "Thanks for your feedback! We've adjusted Sauna 1, it should be cooling down now. The cold plunge is at our standard temperature, but we're monitoring all your feedback."
+        message: "Thanks for your feedback! We've adjusted the Finnish sauna, it should be cooling down now. The cold plunge is at our standard temperature, but we're monitoring all your feedback."
       });
       
       // Add some initial temperature readings with votes
       await this.addTemperatureReading({
         userId: mikeUser.id,
         username: "Mike T.",
-        facilityId: sauna1.id,
+        facilityId: parnyanaFinnish.id,
         temperature: 94
       });
       
       await this.addTemperatureReading({
         userId: jennyUser.id,
         username: "Jenny S.",
-        facilityId: sauna1.id,
+        facilityId: parnyanaFinnish.id,
         temperature: 96
       });
       
