@@ -6,7 +6,7 @@ import { FacilityWithFeedback } from "@shared/schema";
 import { useSocket } from "@/lib/socket";
 import { useTemperatureUnit } from "@/lib/temperatureUnit.tsx";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, ThumbsDown, ThumbsUp } from "lucide-react";
 
 interface TemperatureCardProps {
   facility: FacilityWithFeedback;
@@ -63,14 +63,31 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
       celsiusTemp = (celsiusTemp - 32) * 5/9;
     }
     
-    // For now we'll just log it, later we'll submit to the backend
-    console.log(`Submitting temperature for ${facility.name}: ${celsiusTemp.toFixed(1)}°C`);
+    // Submit temperature reading via websocket
+    const socket = new WebSocket(
+      `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
+    );
     
-    // Clear the input
-    setTempInput("");
-    setSubmitting(false);
+    socket.onopen = () => {
+      socket.send(JSON.stringify({
+        type: 'temperature_reading',
+        payload: {
+          username: 'Anonymous User',
+          facilityId: facility.id,
+          temperature: parseFloat(celsiusTemp.toFixed(1)),
+        }
+      }));
+      
+      // Clear the input and close the socket after sending
+      setTempInput("");
+      setSubmitting(false);
+      socket.close();
+    };
     
-    // TODO: Add API call to submit temperature
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setSubmitting(false);
+    };
   };
 
   // Determine temperature trend indicator
@@ -165,26 +182,71 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
         <div className="mb-3">
           <p className="text-sm text-slate-500 mb-2">Recent Readings</p>
           <div className="space-y-2 max-h-32 overflow-y-auto">
-            <div className="flex items-center justify-between p-2 bg-slate-50 rounded">
-              <div>
-                <span className="font-medium">{formatTemp(95)}</span>
-                <span className="text-xs text-slate-500 ml-2">5m ago</span>
+            {facility.recentReadings && facility.recentReadings.length > 0 ? (
+              facility.recentReadings.map((reading) => (
+                <div key={reading.id} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                  <div>
+                    <span className="font-medium">{formatTemp(reading.temperature)}</span>
+                    <span className="text-xs text-slate-500 ml-2">{reading.timeSinceSubmission}</span>
+                    <span className="text-xs text-slate-500 ml-2">by {reading.username}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button 
+                      className="text-slate-500 hover:text-green-600 flex items-center"
+                      onClick={() => {
+                        // Send upvote via WebSocket
+                        const socket = new WebSocket(
+                          `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
+                        );
+                        
+                        socket.onopen = () => {
+                          socket.send(JSON.stringify({
+                            type: 'temperature_vote',
+                            payload: {
+                              username: 'Anonymous User',
+                              readingId: reading.id,
+                              isUpvote: true
+                            }
+                          }));
+                          socket.close();
+                        };
+                      }}
+                    >
+                      <ThumbsUp className="h-3 w-3 mr-1" />
+                      <span className="text-xs">{reading.upvotes || 0}</span>
+                    </button>
+                    <button 
+                      className="text-slate-500 hover:text-red-600 flex items-center"
+                      onClick={() => {
+                        // Send downvote via WebSocket
+                        const socket = new WebSocket(
+                          `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`
+                        );
+                        
+                        socket.onopen = () => {
+                          socket.send(JSON.stringify({
+                            type: 'temperature_vote',
+                            payload: {
+                              username: 'Anonymous User',
+                              readingId: reading.id,
+                              isUpvote: false
+                            }
+                          }));
+                          socket.close();
+                        };
+                      }}
+                    >
+                      <ThumbsDown className="h-3 w-3 mr-1" />
+                      <span className="text-xs">{reading.downvotes || 0}</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-2 text-sm text-slate-500">
+                No temperature readings yet.
               </div>
-              <div className="flex space-x-2">
-                <button className="text-slate-500 hover:text-green-600"><i className="text-xs">👍 4</i></button>
-                <button className="text-slate-500 hover:text-red-600"><i className="text-xs">👎 1</i></button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-slate-50 rounded">
-              <div>
-                <span className="font-medium">{formatTemp(93)}</span>
-                <span className="text-xs text-slate-500 ml-2">12m ago</span>
-              </div>
-              <div className="flex space-x-2">
-                <button className="text-slate-500 hover:text-green-600"><i className="text-xs">👍 2</i></button>
-                <button className="text-slate-500 hover:text-red-600"><i className="text-xs">👎 0</i></button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
         
