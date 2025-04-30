@@ -27,6 +27,7 @@ interface SocketContextType {
   submitFeedback: (facilityId: number, userId: number | undefined, rating: string) => void;
   dismissAlert: () => void;
   connected: boolean;
+  isOffline: boolean;
 }
 
 const SocketContext = createContext<SocketContextType>({
@@ -38,6 +39,7 @@ const SocketContext = createContext<SocketContextType>({
   submitFeedback: () => {},
   dismissAlert: () => {},
   connected: false,
+  isOffline: false
 });
 
 export function useSocket() {
@@ -47,13 +49,107 @@ export function useSocket() {
 export function SocketProvider({ children }: { children: ReactNode }) {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [facilities, setFacilities] = useState<FacilityWithFeedback[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [recentFeedbacks, setRecentFeedbacks] = useState<RecentFeedback[]>([]);
   const [alert, setAlert] = useState<TemperatureAlert | null>(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const { toast } = useToast();
 
+  // Listen for online/offline status changes
   useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      toast({
+        title: "You're back online",
+        description: "Connected to the network",
+        variant: "default",
+      });
+      // Force reconnect the socket
+      setSocket(null);
+    };
+
+    const handleOffline = () => {
+      setIsOffline(true);
+      setConnected(false);
+      toast({
+        title: "You're offline",
+        description: "Some features may not be available",
+        variant: "destructive",
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Initial check
+    setIsOffline(!navigator.onLine);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [toast]);
+
+  // Load cached data from localStorage when offline
+  useEffect(() => {
+    if (isOffline) {
+      const cachedFacilities = localStorage.getItem('cached_facilities');
+      const cachedChatMessages = localStorage.getItem('cached_chatMessages');
+      const cachedRecentFeedbacks = localStorage.getItem('cached_recentFeedbacks');
+
+      if (cachedFacilities) {
+        try {
+          setFacilities(JSON.parse(cachedFacilities));
+        } catch (e) {
+          console.error("Error parsing cached facilities:", e);
+        }
+      }
+
+      if (cachedChatMessages) {
+        try {
+          setChatMessages(JSON.parse(cachedChatMessages));
+        } catch (e) {
+          console.error("Error parsing cached chat messages:", e);
+        }
+      }
+
+      if (cachedRecentFeedbacks) {
+        try {
+          setRecentFeedbacks(JSON.parse(cachedRecentFeedbacks));
+        } catch (e) {
+          console.error("Error parsing cached recent feedbacks:", e);
+        }
+      }
+    }
+  }, [isOffline]);
+
+  // Cache data to localStorage when it changes
+  useEffect(() => {
+    if (facilities.length > 0) {
+      localStorage.setItem('cached_facilities', JSON.stringify(facilities));
+    }
+  }, [facilities]);
+
+  useEffect(() => {
+    if (chatMessages.length > 0) {
+      localStorage.setItem('cached_chatMessages', JSON.stringify(chatMessages));
+    }
+  }, [chatMessages]);
+
+  useEffect(() => {
+    if (recentFeedbacks.length > 0) {
+      localStorage.setItem('cached_recentFeedbacks', JSON.stringify(recentFeedbacks));
+    }
+  }, [recentFeedbacks]);
+
+  // WebSocket connection management
+  useEffect(() => {
+    if (isOffline) {
+      return; // Don't try to connect if offline
+    }
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     const ws = new WebSocket(wsUrl);
@@ -61,15 +157,27 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     ws.onopen = () => {
       console.log("WebSocket connected");
       setConnected(true);
+      setReconnectAttempts(0);
     };
 
     ws.onclose = () => {
       console.log("WebSocket disconnected");
       setConnected(false);
-      // Try to reconnect after 3 seconds
+      
+      // Try to reconnect with exponential backoff
+      const maxReconnectDelay = 30000; // 30 seconds
+      const baseDelay = 1000; // 1 second
+      const delay = Math.min(
+        maxReconnectDelay, 
+        baseDelay * Math.pow(2, reconnectAttempts)
+      );
+      
       setTimeout(() => {
-        setSocket(null);
-      }, 3000);
+        if (!isOffline) {
+          setReconnectAttempts(prev => prev + 1);
+          setSocket(null);
+        }
+      }, delay);
     };
 
     ws.onerror = (error) => {
@@ -113,11 +221,22 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     setSocket(ws);
 
     return () => {
-      ws.close();
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
     };
-  }, [toast]);
+  }, [toast, reconnectAttempts, isOffline]);
 
   const sendChatMessage = (message: Omit<ChatMessage, "id" | "timestamp">) => {
+    if (isOffline) {
+      toast({
+        title: "You're offline",
+        description: "Messages can't be sent while offline.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({
         type: "chat",
@@ -133,6 +252,15 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   };
 
   const submitFeedback = (facilityId: number, userId: number | undefined, rating: string) => {
+    if (isOffline) {
+      toast({
+        title: "You're offline",
+        description: "Feedback can't be submitted while offline.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({
         type: "feedback",
@@ -163,7 +291,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     sendChatMessage,
     submitFeedback,
     dismissAlert,
-    connected
+    connected,
+    isOffline
   };
 
   // @ts-ignore - This is a workaround for the JSX parsing issue

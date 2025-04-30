@@ -5,6 +5,7 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/offline.html',
   '/icon-192x192.png',
   '/icon-512x512.png',
   '/assets/index.css',
@@ -36,12 +37,28 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  
+  // Immediately take control of all clients
+  return self.clients.claim();
 });
 
 // Fetch event - serve from cache or network
 self.addEventListener('fetch', (event) => {
-  // Skip API calls as we want them to be fresh
+  // Skip API calls but handle them separately to show offline message if they fail
   if (event.request.url.includes('/api/')) {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          // For API requests that fail, we don't serve anything
+          // The app will handle displaying appropriate offline UI elements
+          return new Response(JSON.stringify({ 
+            error: 'You are offline',
+            offline: true 
+          }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        })
+    );
     return;
   }
 
@@ -75,8 +92,11 @@ self.addEventListener('fetch', (event) => {
           .catch(() => {
             // Network request failed, try to serve the offline page
             if (event.request.mode === 'navigate') {
-              return caches.match('/');
+              return caches.match('/offline.html');
             }
+            
+            // For other resources, just return what we have
+            return caches.match(event.request);
           });
       })
   );
