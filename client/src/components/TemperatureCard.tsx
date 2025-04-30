@@ -51,24 +51,38 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
     submitFeedback(facility.id, undefined, rating);
   };
   
-  // Initialize temp value when facility temperature changes
+  // Initialize temp value when facility temperature changes or unit changes
   useEffect(() => {
+    // If unit is fahrenheit and we have celsius temperature in state,
+    // we don't want to convert it to fahrenheit and then store that in state
+    // We should keep celsius in state and convert only for display
     setTempValue(facility.currentTemp);
   }, [facility.currentTemp]);
 
   // Function to increment temperature value
   const incrementTemp = () => {
     setTempValue(prev => {
-      const step = unit === 'celsius' ? 0.1 : 0.2;
-      return parseFloat((prev + step).toFixed(1));
+      if (unit === 'celsius') {
+        // If in Celsius, just add 0.1°C
+        return parseFloat((prev + 0.1).toFixed(1));
+      } else {
+        // If in Fahrenheit, convert to Celsius first, add 0.1°C, then convert back
+        // But actually, we store in Celsius, so just add 0.1°C equivalent directly
+        return parseFloat((prev + (0.1 * 5/9)).toFixed(1));
+      }
     });
   };
 
   // Function to decrement temperature value
   const decrementTemp = () => {
     setTempValue(prev => {
-      const step = unit === 'celsius' ? 0.1 : 0.2;
-      return parseFloat((prev - step).toFixed(1));
+      if (unit === 'celsius') {
+        // If in Celsius, just subtract 0.1°C
+        return parseFloat((prev - 0.1).toFixed(1));
+      } else {
+        // If in Fahrenheit, we want to subtract 0.1°C equivalent
+        return parseFloat((prev - (0.1 * 5/9)).toFixed(1));
+      }
     });
   };
   
@@ -187,7 +201,7 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
                 <div className="text-xl font-medium flex items-center">
                   {unit === 'celsius' 
                     ? `${tempValue.toFixed(1)}°C` 
-                    : `${(tempValue * 9/5 + 32).toFixed(1)}°F`}
+                    : `${((tempValue * 9/5) + 32).toFixed(1)}°F`}
                 </div>
                 
                 <button 
