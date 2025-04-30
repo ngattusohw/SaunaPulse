@@ -56,11 +56,14 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
   
   // Store temperature in Celsius internally, but display in the selected unit
   const [internalTemp, setInternalTemp] = useState<number>(facility.currentTemp);
+  // Track if temperature has been changed by user
+  const [tempChanged, setTempChanged] = useState<boolean>(false);
   
   // Initialize internal temp value when facility temperature changes
   useEffect(() => {
     setInternalTemp(facility.currentTemp);
     setTempValue(facility.currentTemp);
+    setTempChanged(false);
   }, [facility.currentTemp]);
   
   // Update display temperature when unit changes
@@ -106,6 +109,9 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
         // Convert from Fahrenheit to Celsius for internal storage
         setInternalTemp(((newValue - 32) * 5/9));
       }
+      
+      // Mark as changed
+      setTempChanged(true);
       
       // Close the dialog
       setIsManualInputOpen(false);
@@ -171,6 +177,7 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
         setTempValue((facility.currentTemp * 9/5) + 32);
       }
       setSubmitting(false);
+      setTempChanged(false); // Reset temperature changed state
       socket.close();
     };
     
@@ -322,6 +329,7 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
                       setTempValue(newValue);
                       setInternalTemp(((newValue - 32) * 5/9));
                     }
+                    setTempChanged(true);
                   }}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 />
@@ -332,14 +340,16 @@ export default function TemperatureCard({ facility }: TemperatureCardProps) {
               </div>
             </div>
             
-            {/* Submit Button */}
-            <Button
-              className={`${facility.colorClass} hover:opacity-90 text-white w-full`}
-              onClick={handleTempSubmit}
-              disabled={submitting}
-            >
-              {submitting ? "Submitting..." : "Submit Temperature"}
-            </Button>
+            {/* Submit Button - Only show when temperature has changed */}
+            {tempChanged && (
+              <Button
+                className={`${facility.colorClass} hover:opacity-90 text-white w-full animate-in fade-in duration-300`}
+                onClick={handleTempSubmit}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Submit Temperature"}
+              </Button>
+            )}
           </div>
         </div>
         
